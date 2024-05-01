@@ -6,75 +6,104 @@
 /*   By: asideris <asideris@student.s19.be>         +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/04/25 12:22:29 by asideris          #+#    #+#             */
-/*   Updated: 2024/04/28 18:27:22 by asideris         ###   ########.fr       */
+/*   Updated: 2024/04/29 17:01:15 by asideris         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "get_next_line.h"
 #include <stdio.h>
 
-char	*ft_get_remains(char *line_buffer, char *remains_buffer);
-char	*ft_populate_line(char *remains_buffer, char *read_buffer, int fd);
 char	*get_next_line(int fd)
 {
-	char		*line_buffer;
-	char		*read_buffer;
-	static char	*remains_buffer;
+	static char	*cache_buffer;
+	char		*line;
 
-	read_buffer = malloc(sizeof(char) * (BUFFER_SIZE + 1));
-	if (!read_buffer)
+	if (fd < 0 || BUFFER_SIZE <= 0 || read(fd, 0, 0) < 0)
+	{
+		ft_free_cache(&cache_buffer);
 		return (NULL);
-	line_buffer = ft_populate_line(remains_buffer, read_buffer, fd);
-	remains_buffer = ft_get_remains(line_buffer, remains_buffer);
-	if (!line_buffer)
+	}
+	if (cache_buffer == NULL)
+		cache_buffer = ft_strdup("");
+	if (!cache_buffer)
 		return (NULL);
-	return (line_buffer);
+	line = (ft_check_cache(fd, &cache_buffer));
+	if (!line)
+		ft_free_cache(&cache_buffer);
+	return (line);
 }
 
-char	*ft_populate_line(char *remains_buffer, char *read_buffer, int fd)
+char	*ft_check_cache(int fd, char **cache)
 {
-	ssize_t	curr_reading;
+	int		readresult;
 	char	*tmp;
 
-	curr_reading = 1;
-	while (curr_reading > 0)
+	if (ft_strchr(*cache, '\n'))
 	{
-		curr_reading = read(fd, read_buffer, BUFFER_SIZE);
-		if (curr_reading < 0)
-		{
-			printf("Error reading file.\n");
-			return (NULL);
-		}
-		printf("Bytes read: %ld\n", curr_reading);
-		if (!remains_buffer)
-			remains_buffer = ft_strdup("");
-		if (curr_reading == 0 || ft_strchr(read_buffer, '\n'))
-			break ;
-		tmp = remains_buffer;
-		remains_buffer = ft_strjoin(tmp, read_buffer);
-		free(tmp);
-		tmp = NULL;
+		tmp = ft_substr(*cache, 0, ft_strchr(*cache, '\n') - *cache + 1);
+		*cache = ft_memmove(*cache, ft_strchr(*cache, '\n') + 1,
+				ft_strlen(ft_strchr(*cache, '\n') + 1) + 1);
 	}
-	return (remains_buffer);
+	else
+	{
+		readresult = ft_fill_line(cache, fd);
+		if (readresult <= 0)
+		{
+			if (ft_strlen(*cache) == 0 || readresult < 0)
+			{
+				ft_free_cache(cache);
+				return (NULL);
+			}
+			else
+			{
+				tmp = (ft_substr(*cache, 0, ft_strchr(*cache, '\0') - *cache
+							+ 1));
+				*cache[0] = '\0';
+				return (tmp);
+			}
+		}
+		return (ft_check_cache(fd, cache));
+	}
+	return (tmp);
 }
-
-char	*ft_get_remains(char *line_buffer, char *remains_buffer)
+int	ft_fill_line(char **cache, int fd)
 {
-	int	i;
+	int		readresult;
+	char	read_buffer[BUFFER_SIZE + 1];
+	char	*tmp;
 
-	i = 0;
-	while (line_buffer[i] != '\n' && line_buffer[i] != '\0')
-		i++;
-	remains_buffer = ft_substr(line_buffer, i + 1, ft_strlen(line_buffer) - i);
-	printf("Remains: %s\n", remains_buffer);
-	return (remains_buffer);
+	ft_bzero(read_buffer, BUFFER_SIZE + 1);
+	readresult = read(fd, read_buffer, BUFFER_SIZE);
+	if (readresult < 0)
+	{
+		ft_free_cache(cache);
+		return (readresult);
+	}
+	tmp = *cache;
+	*cache = ft_strjoin(*cache, read_buffer);
+	if (tmp)
+		free(tmp);
+	return (readresult);
 }
+void	ft_free_cache(char **cache)
+{
+	if (*cache)
+		free(*cache);
+	*cache = NULL;
+	return ;
+}
+
+/*#include <stdio.h>
 
 int	main(void)
 {
 	int	fd;
 
-	fd = open("test.txt", O_RDWR);
-	printf("Line: %s\n", get_next_line(fd));
-	return (0);
-}
+	fd = open("test.txt", O_RDONLY);
+	printf("line : %s", get_next_line(fd));
+	printf("line : %s", get_next_line(fd));
+	printf("line : %s", get_next_line(fd));
+	printf("line : %s", get_next_line(fd));
+	printf("line : %s", get_next_line(fd));
+	close(fd);
+}*/

@@ -6,7 +6,7 @@
 /*   By: asideris <asideris@student.s19.be>         +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/04/25 13:09:32 by asideris          #+#    #+#             */
-/*   Updated: 2024/04/28 17:13:22 by asideris         ###   ########.fr       */
+/*   Updated: 2024/04/29 16:59:30 by asideris         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -23,6 +23,7 @@ int	ft_strlen(const char *str)
 	}
 	return (i);
 }
+
 char	*ft_strdup(const char *s1)
 {
 	char	*s2;
@@ -58,6 +59,7 @@ char	*ft_strchr(const char *s, int c)
 	}
 	return (0);
 }
+
 char	*ft_strjoin(char const *s1, char const *s2)
 {
 	char	*s;
@@ -117,6 +119,27 @@ void	*ft_calloc(size_t count, size_t size)
 	return (i);
 }
 
+void	*ft_memmove(void *dest, const void *src, size_t len)
+{
+	unsigned char		*d;
+	const unsigned char	*s = (const unsigned char *)src;
+
+	d = (unsigned char *)dest;
+	if (dest == src)
+		return (dest);
+	if (dest > src)
+	{
+		while (len--)
+			d[len] = s[len];
+	}
+	else
+	{
+		while (len--)
+			*d++ = *s++;
+	}
+	return (dest);
+}
+
 void	*ft_memcpy(void *dest, const void *src, size_t n)
 {
 	long unsigned int	i;
@@ -131,6 +154,7 @@ void	*ft_memcpy(void *dest, const void *src, size_t n)
 	}
 	return (dest);
 }
+
 void	ft_bzero(void *s, size_t n)
 {
 	long unsigned int i;
