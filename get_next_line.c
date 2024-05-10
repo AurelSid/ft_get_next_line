@@ -5,105 +5,99 @@
 /*                                                    +:+ +:+         +:+     */
 /*   By: asideris <asideris@student.s19.be>         +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2024/04/25 12:22:29 by asideris          #+#    #+#             */
-/*   Updated: 2024/04/29 17:01:15 by asideris         ###   ########.fr       */
+/*   Created: 2024/05/06 14:27:34 by asideris          #+#    #+#             */
+/*   Updated: 2024/05/10 15:57:01 by asideris         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "get_next_line.h"
 #include <stdio.h>
 
-char	*get_next_line(int fd)
+char	*init_empty_string(void)
 {
-	static char	*cache_buffer;
-	char		*line;
+	char	*str;
 
-	if (fd < 0 || BUFFER_SIZE <= 0 || read(fd, 0, 0) < 0)
-	{
-		ft_free_cache(&cache_buffer);
+	str = malloc(sizeof(char) * 1);
+	if (!str)
 		return (NULL);
-	}
-	if (cache_buffer == NULL)
-		cache_buffer = ft_strdup("");
-	if (!cache_buffer)
-		return (NULL);
-	line = (ft_check_cache(fd, &cache_buffer));
-	if (!line)
-		ft_free_cache(&cache_buffer);
-	return (line);
+	str[0] = '\0';
+	return (str);
 }
 
-char	*ft_check_cache(int fd, char **cache)
+void	ft_next_line(char **buffer, int last_new_line)
 {
-	int		readresult;
 	char	*tmp;
 
-	if (ft_strchr(*cache, '\n'))
+	tmp = *buffer;
+	*buffer = ft_substr(*buffer, last_new_line, ft_strlen(*buffer));
+	free(tmp);
+	return ;
+}
+ssize_t	ft_fill_line(char **buffer, int fd)
+{
+	ssize_t	readed_count;
+	char	*read_buff;
+
+	if (BUFFER_SIZE < 1 || !BUFFER_SIZE || read(fd, 0, 0) < 0 || fd < 0 || !fd)
+		return (0);
+	if (!(*buffer))
+		*buffer = init_empty_string();
+	if (!(*buffer))
+		return (0);
+	read_buff = malloc(sizeof(char) * (BUFFER_SIZE + 1));
+	
+	if (!read_buff)
+		return (0);
+	readed_count = read(fd, read_buff, BUFFER_SIZE);
+	while (readed_count > 0)
 	{
-		tmp = ft_substr(*cache, 0, ft_strchr(*cache, '\n') - *cache + 1);
-		*cache = ft_memmove(*cache, ft_strchr(*cache, '\n') + 1,
-				ft_strlen(ft_strchr(*cache, '\n') + 1) + 1);
+		read_buff[readed_count] = '\0';
+		*buffer = ft_strjoin(*buffer, read_buff);
+		if (charchr(*buffer, '\n') >= 0)
+			break ;
+		readed_count = read(fd, read_buff, BUFFER_SIZE);
+	}
+	free(read_buff);
+	return (1);
+}
+
+char	*get_next_line(int fd)
+{
+	static char	*buffer;
+	int			last_new_line;
+	char		*line;
+
+	if (!ft_fill_line(&buffer, fd))
+		free(buffer);
+	last_new_line = charchr(buffer, '\n');
+	if (last_new_line >= 0)
+	{
+		line = ft_substr(buffer, 0, last_new_line + 1);
+		ft_next_line(&buffer, last_new_line + 1);
 	}
 	else
 	{
-		readresult = ft_fill_line(cache, fd);
-		if (readresult <= 0)
-		{
-			if (ft_strlen(*cache) == 0 || readresult < 0)
-			{
-				ft_free_cache(cache);
-				return (NULL);
-			}
-			else
-			{
-				tmp = (ft_substr(*cache, 0, ft_strchr(*cache, '\0') - *cache
-							+ 1));
-				*cache[0] = '\0';
-				return (tmp);
-			}
-		}
-		return (ft_check_cache(fd, cache));
+		line = ft_substr(buffer, 0, ft_strlen(buffer));
+		free(buffer);
+		buffer = NULL;
 	}
-	return (tmp);
-}
-int	ft_fill_line(char **cache, int fd)
-{
-	int		readresult;
-	char	read_buffer[BUFFER_SIZE + 1];
-	char	*tmp;
-
-	ft_bzero(read_buffer, BUFFER_SIZE + 1);
-	readresult = read(fd, read_buffer, BUFFER_SIZE);
-	if (readresult < 0)
+	if (ft_strlen(line) == 0)
 	{
-		ft_free_cache(cache);
-		return (readresult);
+		free(line);
+		return (NULL);
 	}
-	tmp = *cache;
-	*cache = ft_strjoin(*cache, read_buffer);
-	if (tmp)
-		free(tmp);
-	return (readresult);
+	return (line);
 }
-void	ft_free_cache(char **cache)
+/*int	main(void)
 {
-	if (*cache)
-		free(*cache);
-	*cache = NULL;
-	return ;
-}
-
-/*#include <stdio.h>
-
-int	main(void)
-{
-	int	fd;
+	int fd;
 
 	fd = open("test.txt", O_RDONLY);
-	printf("line : %s", get_next_line(fd));
-	printf("line : %s", get_next_line(fd));
-	printf("line : %s", get_next_line(fd));
-	printf("line : %s", get_next_line(fd));
-	printf("line : %s", get_next_line(fd));
+	if (!fd)
+		perror("Fd not valid");
+
+	printf("line : [%s], \n", get_next_line(fd));
+
+
 	close(fd);
 }*/
