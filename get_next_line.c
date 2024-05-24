@@ -6,7 +6,7 @@
 /*   By: asideris <asideris@student.s19.be>         +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/06 14:27:34 by asideris          #+#    #+#             */
-/*   Updated: 2024/05/13 16:52:16 by asideris         ###   ########.fr       */
+/*   Updated: 2024/05/17 13:34:05 by asideris         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -77,7 +77,7 @@ char	*get_next_line(int fd)
 	int			last_new_line;
 	char		*line;
 
-	if (!ft_fill_line(&buffer, fd))
+	if (BUFFER_SIZE >= INT_MAX || !ft_fill_line(&buffer, fd))
 	{
 		buffer = NULL;
 		line = NULL;
@@ -108,7 +108,6 @@ char	*get_next_line(int fd)
 		perror("Fd not valid");
 
 	printf("line : [%s], \n", get_next_line(fd));
-
 
 	close(fd);
 }*/
